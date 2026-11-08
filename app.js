@@ -1,10 +1,11 @@
 import * as data from './data.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { user: null, stops: [], todos: [], stopsReady: false };
+const state = { user: null, stops: [], todos: [], stopsReady: false, todosReady: false };
 let unsubs = [];
 let currentView = null;
 let editingStopId = null;
+let editingOriginal = null; // values shown when the edit dialog opened
 let editingTodoId = null;
 
 /* ---------- helpers ---------- */
@@ -86,7 +87,7 @@ function renderStops() {
     const c = counts[s.id] || { done: 0, total: 0 };
     const a = el('a', 'row stop',
       el('div', 'main', el('div', 'name', s.name), el('div', 'sub', datesText(s))),
-      el('div', 'badge' + (c.total && c.done === c.total ? ' complete' : ''), `${c.done}/${c.total}`),
+      el('div', 'badge' + (c.total && c.done === c.total ? ' complete' : ''), state.todosReady ? `${c.done}/${c.total}` : '…'),
       el('span', 'chev', '›'));
     a.href = `#/stop/${s.id}`;
     list.append(el('li', 'item', a));
@@ -102,7 +103,7 @@ function renderStop(stop) {
   const todos = sortTodos(state.todos.filter((t) => t.stopId === stop.id));
   for (const t of todos) {
     const cb = el('input'); cb.type = 'checkbox'; cb.checked = t.done;
-    cb.setAttribute('aria-label', 'Done');
+    cb.setAttribute('aria-label', `Done: ${t.text}`);
     cb.addEventListener('change', () => data.setDone(t.id, cb.checked));
     const text = el('button', 'todo-text', t.text); text.type = 'button';
     text.addEventListener('click', () => openTodoEdit(t));
@@ -113,12 +114,13 @@ function renderStop(stop) {
     });
     list.append(el('li', 'item todo' + (t.done ? ' done' : ''), el('label', 'check', cb), text, del));
   }
-  $('todos-empty').hidden = todos.length > 0;
+  $('todos-empty').hidden = todos.length > 0 || !state.todosReady;
 }
 
 /* ---------- stop dialog (add / edit / delete) ---------- */
 function openStopDialog(stop) {
   editingStopId = stop ? stop.id : null;
+  editingOriginal = stop ? { name: stop.name, arrival: stop.arrival || null, departure: stop.departure || null } : null;
   $('stop-dialog-title').textContent = stop ? 'Edit country' : 'Add country';
   $('stop-name').value = stop ? stop.name : '';
   $('stop-arrival').value = stop?.arrival || '';
@@ -145,8 +147,17 @@ $('stop-form').addEventListener('submit', (e) => {
   if (arrival && departure && departure < arrival) {
     $('stop-error').textContent = "Departure can't be before arrival."; return;
   }
-  if (editingStopId) data.updateStop(editingStopId, { name, arrival, departure });
-  else data.addStop({ name, arrival, departure });
+  if (editingStopId) {
+    if (!state.stops.some((s) => s.id === editingStopId)) {
+      toast('This country was deleted on the other phone.');
+    } else {
+      const changes = {};
+      if (name !== editingOriginal.name) changes.name = name;
+      if (arrival !== editingOriginal.arrival) changes.arrival = arrival;
+      if (departure !== editingOriginal.departure) changes.departure = departure;
+      if (Object.keys(changes).length) data.updateStop(editingStopId, changes);
+    }
+  } else data.addStop({ name, arrival, departure });
   $('stop-dialog').close();
 });
 $('stop-delete').addEventListener('click', async () => {
@@ -230,11 +241,18 @@ data.onWriteError((err) => {
 });
 data.onUser((user) => {
   unsubs.forEach((u) => u()); unsubs = [];
-  Object.assign(state, { user, stops: [], todos: [], stopsReady: false });
+  Object.assign(state, { user, stops: [], todos: [], stopsReady: false, todosReady: false });
   if (user) {
     $('login-form').reset();
-    unsubs.push(data.watchStops((list) => { state.stops = list; state.stopsReady = true; render(); }, onListenError));
-    unsubs.push(data.watchTodos((list) => { state.todos = list; render(); }, onListenError));
+    unsubs.push(data.watchStops((list) => {
+      state.stops = list; state.stopsReady = true;
+      const dlg = $('stop-dialog');
+      if (dlg.open && editingStopId && !list.some((s) => s.id === editingStopId)) {
+        dlg.close(); toast('This country was deleted on the other phone.');
+      }
+      render();
+    }, onListenError));
+    unsubs.push(data.watchTodos((list) => { state.todos = list; state.todosReady = true; render(); }, onListenError));
   }
   render();
 });

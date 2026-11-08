@@ -1,5 +1,5 @@
-:root{--bg:#f4f6f6;--card:#fff;--text:#12201f;--muted:#5d6f6d;--line:#dde4e3;--primary:#0f766e;--on-primary:#fff;--danger:#b42318;--done:#8a9a98}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1514;--card:#17201f;--text:#e8f0ef;--muted:#9bb0ad;--line:#2a3837;--primary:#2bb3a6;--on-primary:#06201d;--danger:#f97066;--done:#6f817e}}
+:root{--bg:#f4f6f6;--card:#fff;--text:#12201f;--muted:#5d6f6d;--line:#dde4e3;--primary:#0f766e;--on-primary:#fff;--danger:#b42318;--done:#637472}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1514;--card:#17201f;--text:#e8f0ef;--muted:#9bb0ad;--line:#2a3837;--primary:#2bb3a6;--on-primary:#06201d;--danger:#f97066;--done:#8fa3a0}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;

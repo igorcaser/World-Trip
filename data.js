@@ -33,8 +33,8 @@ export const watchTodos = (cb, onError) => watch('todos', cb, onError);
 export function addStop({ name, arrival, departure }) {
   fire(setDoc(doc(collection(db, 'stops')), { name, arrival, departure, createdAt: Date.now() }));
 }
-export function updateStop(id, { name, arrival, departure }) {
-  fire(updateDoc(doc(db, 'stops', id), { name, arrival, departure }));
+export function updateStop(id, changes) { // only the changed fields, so a partner's edits to other fields survive
+  fire(updateDoc(doc(db, 'stops', id), changes));
 }
 export function deleteStop(id, todoIds) { // removes the stop and all its to-dos in one batch
   const batch = writeBatch(db);

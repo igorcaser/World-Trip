@@ -1,6 +1,6 @@
 // Service worker: lets the app open without internet.
 // Bump CACHE when you want phones to drop old cached files.
-const CACHE = 'world-trip-v2';
+const CACHE = 'world-trip-v3';
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
 const APP = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'firebase-config.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
@@ -25,7 +25,8 @@ self.addEventListener('fetch', (e) => {
   if (!isSdk && url.origin !== location.origin) return; // Firebase API calls go straight to the network
   if (isSdk) { // SDK files never change for a given version: cache first
     e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res;
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+      return res;
     })));
     return;
   }
