@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="World Trip">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<title>World Trip</title>
+</head>
+<body>
+<div id="offline" class="banner" hidden>Offline – your changes are saved on this phone and will sync when you are back online.</div>
+<div id="toast" class="toast" hidden></div>
+
+<main id="login" class="view" hidden>
+  <h1 class="big">World Trip</h1>
+  <form id="login-form" class="card form">
+    <label>Email<input id="login-email" type="email" autocomplete="username" required></label>
+    <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+    <p id="login-error" class="error" role="alert"></p>
+    <button id="login-btn" class="btn primary" type="submit">Log in</button>
+  </form>
+</main>
+
+<main id="stops-view" class="view" hidden>
+  <header class="bar">
+    <h1>World Trip</h1>
+    <button id="logout" class="link" type="button">Log out</button>
+  </header>
+  <ul id="stops" class="list"></ul>
+  <p id="stops-empty" class="empty" hidden>No countries yet. Tap + to add the first one.</p>
+  <button id="add-stop" class="fab" type="button" aria-label="Add country">+</button>
+</main>
+
+<main id="stop-view" class="view" hidden>
+  <header class="bar">
+    <button id="back" class="link" type="button">‹ Countries</button>
+    <button id="edit-stop" class="link" type="button">Edit</button>
+  </header>
+  <h1 id="stop-title" class="stop-title"></h1>
+  <p id="stop-dates" class="sub"></p>
+  <form id="todo-form" class="add-row">
+    <input id="todo-input" type="text" placeholder="Add a to-do" maxlength="500" autocomplete="off" required>
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+  <ul id="todos" class="list"></ul>
+  <p id="todos-empty" class="empty" hidden>No to-dos yet. Add the first one above.</p>
+</main>
+
+<dialog id="stop-dialog">
+  <form id="stop-form" class="form">
+    <h2 id="stop-dialog-title">Add country</h2>
+    <label>Country<input id="stop-name" type="text" maxlength="80" autocomplete="off" required></label>
+    <label>Arrival
+      <span class="date-row"><input id="stop-arrival" type="date"><button type="button" class="link" data-clear="stop-arrival">Clear</button></span>
+    </label>
+    <label>Departure
+      <span class="date-row"><input id="stop-departure" type="date"><button type="button" class="link" data-clear="stop-departure">Clear</button></span>
+    </label>
+    <p id="stop-error" class="error" role="alert"></p>
+    <div class="actions">
+      <button id="stop-delete" class="btn danger" type="button" hidden>Delete</button>
+      <button id="stop-cancel" class="btn" type="button">Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="todo-dialog">
+  <form id="todo-edit-form" class="form">
+    <h2>Edit to-do</h2>
+    <label>Text<input id="todo-edit-text" type="text" maxlength="500" autocomplete="off" required></label>
+    <div class="actions">
+      <button id="todo-edit-cancel" class="btn" type="button">Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-dialog">
+  <form method="dialog" class="form">
+    <p id="confirm-text"></p>
+    <div class="actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button id="confirm-ok" class="btn danger" value="ok">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
