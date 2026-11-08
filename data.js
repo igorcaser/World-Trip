@@ -29,6 +29,8 @@ const watch = (name, cb, onError) =>
     onError);
 export const watchStops = (cb, onError) => watch('stops', cb, onError);
 export const watchTodos = (cb, onError) => watch('todos', cb, onError);
+export const watchPlaces = (cb, onError) => watch('places', cb, onError);
+export const watchActivities = (cb, onError) => watch('activities', cb, onError);
 
 export function addStop({ name, arrival, departure }) {
   fire(setDoc(doc(collection(db, 'stops')), { name, arrival, departure, createdAt: Date.now() }));
@@ -36,9 +38,11 @@ export function addStop({ name, arrival, departure }) {
 export function updateStop(id, changes) { // only the changed fields, so a partner's edits to other fields survive
   fire(updateDoc(doc(db, 'stops', id), changes));
 }
-export function deleteStop(id, todoIds) { // removes the stop and all its to-dos in one batch
+export function deleteStop(id, { todoIds, placeIds, activityIds }) { // removes the stop and everything in it, one batch
   const batch = writeBatch(db);
   todoIds.forEach((t) => batch.delete(doc(db, 'todos', t)));
+  placeIds.forEach((p) => batch.delete(doc(db, 'places', p)));
+  activityIds.forEach((a) => batch.delete(doc(db, 'activities', a)));
   batch.delete(doc(db, 'stops', id));
   fire(batch.commit());
 }
@@ -51,3 +55,19 @@ export function setDone(id, done) {
   fire(updateDoc(doc(db, 'todos', id), { done, doneAt: done ? Date.now() : null }));
 }
 export function deleteTodo(id) { fire(deleteDoc(doc(db, 'todos', id))); }
+
+// ---- places: a city per country; the online link is built in the UI, never stored
+export function addPlace({ stopId, name, provider }) {
+  fire(setDoc(doc(collection(db, 'places')), { stopId, name, provider, createdAt: Date.now() }));
+}
+export function updatePlace(id, changes) { fire(updateDoc(doc(db, 'places', id), changes)); }
+// Linked activities stay. Their placeId is left alone: the UI treats a placeId that points to a
+// missing place as "unlinked" (ids are never reused), so nothing can fail if the partner just deleted one.
+export function deletePlace(id) { fire(deleteDoc(doc(db, 'places', id))); }
+
+// ---- activities: title + notes + optional place
+export function addActivity({ stopId, title, notes, placeId }) {
+  fire(setDoc(doc(collection(db, 'activities')), { stopId, title, notes, placeId, createdAt: Date.now() }));
+}
+export function updateActivity(id, changes) { fire(updateDoc(doc(db, 'activities', id), changes)); }
+export function deleteActivity(id) { fire(deleteDoc(doc(db, 'activities', id))); }

@@ -1,12 +1,19 @@
 import * as data from './data.js';
+import { $, el, toast, confirmAction, normName, plural } from './ui.js';
+import { features } from './features/index.js';
 
-const $ = (id) => document.getElementById(id);
-const state = { user: null, stops: [], todos: [], stopsReady: false, todosReady: false };
+const state = {
+  user: null, stops: [], todos: [], places: [], activities: [],
+  stopsReady: false, todosReady: false, placesReady: false, activitiesReady: false
+};
+const ui = { el, toast, confirmAction, normName, plural };
+const ROUTE = /^#\/stop\/([A-Za-z0-9]+)(?:\/([a-z]+))?$/; // #/stop/<id>  or  #/stop/<id>/<featureId>
 let unsubs = [];
 let currentView = null;
 let editingStopId = null;
 let editingOriginal = null; // values shown when the edit dialog opened
-let editingTodoId = null;
+let mounted = null;         // the open feature page: { update }
+let mountedKey = null;
 
 /* ---------- helpers ---------- */
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -28,66 +35,39 @@ function sortStops(list) {
     return byName(a, b) || a.createdAt - b.createdAt;
   });
 }
-// Open to-dos first (oldest first), done to-dos at the bottom (earliest done first).
-function sortTodos(list) {
-  const open = list.filter((t) => !t.done).sort((a, b) => a.createdAt - b.createdAt);
-  const done = list.filter((t) => t.done).sort((a, b) => (a.doneAt || 0) - (b.doneAt || 0));
-  return open.concat(done);
-}
-function el(tag, cls, ...children) {
-  const n = document.createElement(tag);
-  if (cls) n.className = cls;
-  n.append(...children);
-  return n;
-}
-let toastTimer;
-function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg; t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.hidden = true; }, 4000);
-}
-function confirmAction(message, okLabel = 'Delete') {
-  return new Promise((resolve) => {
-    const dlg = $('confirm-dialog');
-    $('confirm-text').textContent = message;
-    $('confirm-ok').textContent = okLabel;
-    dlg.returnValue = '';
-    dlg.addEventListener('close', () => resolve(dlg.returnValue === 'ok'), { once: true });
-    dlg.showModal();
-  });
-}
+const joinList = (parts) => (parts.length > 1
+  ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0]);
 
 /* ---------- views ---------- */
+function clearFeature() {
+  if (mounted) { $('feature-body').replaceChildren(); mounted = null; mountedKey = null; }
+}
 function show(name) {
-  for (const v of ['login', 'stops-view', 'stop-view']) $(v).hidden = v !== name;
+  for (const v of ['login', 'stops-view', 'stop-view', 'feature-view']) $(v).hidden = v !== name;
+  if (name !== 'feature-view') clearFeature();
   if (name && name !== currentView) window.scrollTo(0, 0);
   currentView = name;
 }
 function render() {
   if (!state.user) return show('login');
-  const m = location.hash.match(/^#\/stop\/([A-Za-z0-9]+)$/);
+  const m = location.hash.match(ROUTE);
   if (!m) { show('stops-view'); return renderStops(); }
   if (!state.stopsReady) return show(null);
   const stop = state.stops.find((s) => s.id === m[1]);
   if (!stop) { location.hash = '#/'; return; } // deleted (maybe by the other user)
-  show('stop-view');
-  renderStop(stop);
+  const feature = m[2] && features.find((f) => f.id === m[2]);
+  if (m[2] && !feature) { location.replace(`#/stop/${stop.id}`); return; } // unknown feature -> country page
+  if (!feature) { show('stop-view'); return renderStop(stop); }
+  show('feature-view');
+  renderFeature(stop, feature);
 }
 
 function renderStops() {
-  const counts = {};
-  for (const t of state.todos) {
-    const c = counts[t.stopId] || (counts[t.stopId] = { done: 0, total: 0 });
-    c.total++; if (t.done) c.done++;
-  }
   const list = $('stops');
   list.replaceChildren();
   for (const s of sortStops(state.stops)) {
-    const c = counts[s.id] || { done: 0, total: 0 };
     const a = el('a', 'row stop',
       el('div', 'main', el('div', 'name', s.name), el('div', 'sub', datesText(s))),
-      el('div', 'badge' + (c.total && c.done === c.total ? ' complete' : ''), state.todosReady ? `${c.done}/${c.total}` : '…'),
       el('span', 'chev', '›'));
     a.href = `#/stop/${s.id}`;
     list.append(el('li', 'item', a));
@@ -95,26 +75,29 @@ function renderStops() {
   $('stops-empty').hidden = !state.stopsReady || state.stops.length > 0;
 }
 
-function renderStop(stop) {
+function renderStop(stop) { // country page: one icon tile per feature
   $('stop-title').textContent = stop.name;
   $('stop-dates').textContent = datesText(stop);
-  const list = $('todos');
-  list.replaceChildren();
-  const todos = sortTodos(state.todos.filter((t) => t.stopId === stop.id));
-  for (const t of todos) {
-    const cb = el('input'); cb.type = 'checkbox'; cb.checked = t.done;
-    cb.setAttribute('aria-label', `Done: ${t.text}`);
-    cb.addEventListener('change', () => data.setDone(t.id, cb.checked));
-    const text = el('button', 'todo-text', t.text); text.type = 'button';
-    text.addEventListener('click', () => openTodoEdit(t));
-    const del = el('button', 'icon-btn', '✕'); del.type = 'button';
-    del.setAttribute('aria-label', 'Delete to-do');
-    del.addEventListener('click', async () => {
-      if (await confirmAction('Delete this to-do?')) data.deleteTodo(t.id);
-    });
-    list.append(el('li', 'item todo' + (t.done ? ' done' : ''), el('label', 'check', cb), text, del));
+  const tiles = $('tiles');
+  tiles.replaceChildren();
+  for (const f of features) {
+    const icon = el('span', 'tile-icon'); icon.innerHTML = f.icon; // our own constant SVG
+    const a = el('a', 'tile', icon, el('span', 'tile-name', f.title));
+    a.href = `#/stop/${stop.id}/${f.id}`;
+    tiles.append(a);
   }
-  $('todos-empty').hidden = todos.length > 0 || !state.todosReady;
+}
+
+function renderFeature(stop, feature) {
+  const key = `${stop.id}/${feature.id}`;
+  if (mountedKey !== key) { // opening a different feature/country: build its page once
+    $('feature-body').replaceChildren();
+    mounted = feature.create($('feature-body'), { data, ui });
+    mountedKey = key;
+  }
+  $('feature-title').textContent = feature.title;
+  $('feature-back').textContent = `‹ ${stop.name}`;
+  mounted.update({ stop, state });
 }
 
 /* ---------- stop dialog (add / edit / delete) ---------- */
@@ -165,42 +148,23 @@ $('stop-delete').addEventListener('click', async () => {
   const stop = state.stops.find((s) => s.id === id);
   if (!stop) return;
   const todoIds = state.todos.filter((t) => t.stopId === id).map((t) => t.id);
-  const extra = todoIds.length ? ` and its ${todoIds.length} to-do${todoIds.length > 1 ? 's' : ''}` : '';
+  const placeIds = state.places.filter((p) => p.stopId === id).map((p) => p.id);
+  const activityIds = state.activities.filter((a) => a.stopId === id).map((a) => a.id);
+  const parts = [];
+  if (todoIds.length) parts.push(plural(todoIds.length, 'to-do', 'to-dos'));
+  if (placeIds.length) parts.push(plural(placeIds.length, 'place', 'places'));
+  if (activityIds.length) parts.push(plural(activityIds.length, 'activity', 'activities'));
+  const extra = parts.length ? ` and its ${joinList(parts)}` : '';
   $('stop-dialog').close();
   if (await confirmAction(`Delete ${stop.name}${extra}?`)) {
-    data.deleteStop(id, todoIds);
+    data.deleteStop(id, { todoIds, placeIds, activityIds });
     location.hash = '#/';
   }
 });
 
-/* ---------- to-dos ---------- */
-$('todo-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const text = $('todo-input').value.trim();
-  const id = location.hash.split('/')[2];
-  if (!id) return;
-  if (!text) { toast('Please type something first.'); return; }
-  data.addTodo(id, text);
-  $('todo-input').value = '';
-  $('todo-input').focus();
-});
-function openTodoEdit(t) {
-  editingTodoId = t.id;
-  $('todo-edit-text').value = t.text;
-  $('todo-edit-error').textContent = '';
-  $('todo-dialog').showModal();
-}
-$('todo-edit-cancel').addEventListener('click', () => $('todo-dialog').close());
-$('todo-edit-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const text = $('todo-edit-text').value.trim();
-  if (!text) { $('todo-edit-error').textContent = 'Please type something.'; return; }
-  data.updateTodoText(editingTodoId, text);
-  $('todo-dialog').close();
-});
-
 /* ---------- navigation ---------- */
 $('back').addEventListener('click', () => { location.hash = '#/'; });
+$('feature-back').addEventListener('click', () => { location.hash = `#/stop/${location.hash.split('/')[2]}`; });
 window.addEventListener('hashchange', render);
 
 /* ---------- login / logout ---------- */
@@ -241,7 +205,10 @@ data.onWriteError((err) => {
 });
 data.onUser((user) => {
   unsubs.forEach((u) => u()); unsubs = [];
-  Object.assign(state, { user, stops: [], todos: [], stopsReady: false, todosReady: false });
+  Object.assign(state, {
+    user, stops: [], todos: [], places: [], activities: [],
+    stopsReady: false, todosReady: false, placesReady: false, activitiesReady: false
+  });
   if (user) {
     $('login-form').reset();
     unsubs.push(data.watchStops((list) => {
@@ -252,7 +219,9 @@ data.onUser((user) => {
       }
       render();
     }, onListenError));
-    unsubs.push(data.watchTodos((list) => { state.todos = list; state.todosReady = true; render(); }, onListenError));
+    unsubs.push(data.watchTodos((l) => { state.todos = l; state.todosReady = true; render(); }, onListenError));
+    unsubs.push(data.watchPlaces((l) => { state.places = l; state.placesReady = true; render(); }, onListenError));
+    unsubs.push(data.watchActivities((l) => { state.activities = l; state.activitiesReady = true; render(); }, onListenError));
   }
   render();
 });

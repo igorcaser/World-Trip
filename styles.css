@@ -30,7 +30,7 @@ h1{font-size:1.5rem;margin:0}h2{margin:0 0 4px;font-size:1.2rem}
 .icon-btn{width:44px;height:44px;flex:none;background:none;border:0;color:var(--muted);font-size:1.1rem}
 .add-row{display:flex;gap:8px;margin-top:12px}
 .add-row input{flex:1;min-width:0}
-input[type=text],input[type=email],input[type=password],input[type=date]{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px}
+input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px}
 input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .btn{font:inherit;font-weight:600;min-height:46px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
 .btn.primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
@@ -47,3 +47,16 @@ dialog{width:calc(100% - 32px);max-width:420px;border:0;border-radius:16px;paddi
 dialog::backdrop{background:rgba(0,0,0,.45)}
 .banner{background:#92400e;color:#fff;text-align:center;font-size:.85rem;padding:6px 12px}
 .toast{position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;background:#1f2937;color:#fff;border-radius:10px;padding:12px 14px;z-index:10;font-size:.9rem}
+
+.back{max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:140px;padding:16px 8px;background:var(--card);border:1px solid var(--line);border-radius:16px;color:var(--text);text-decoration:none;text-align:center}
+.tile:active{background:var(--bg)}
+.tile-icon{display:flex;color:var(--primary)}
+.tile-name{font-weight:600}
+.wide{width:100%;margin-top:12px}
+select,textarea{font:inherit;font-size:16px;width:100%}
+textarea{resize:vertical;min-height:120px}
+.item>button.row{width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
+.item.place{display:flex;align-items:center}
+.item.place .row{flex:1;min-width:0}

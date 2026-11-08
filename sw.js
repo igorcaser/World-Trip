@@ -1,8 +1,9 @@
 // Service worker: lets the app open without internet.
 // Bump CACHE when you want phones to drop old cached files.
-const CACHE = 'world-trip-v3';
+const CACHE = 'world-trip-v4';
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
-const APP = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'firebase-config.js',
+const APP = ['./', 'index.html', 'styles.css', 'app.js', 'ui.js', 'data.js', 'firebase-config.js',
+  'features/index.js', 'features/todos.js', 'features/places.js', 'features/activities.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const SDK_FILES = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map((f) => SDK + f);
 

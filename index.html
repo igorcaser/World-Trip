@@ -45,12 +45,15 @@
   </header>
   <h1 id="stop-title" class="stop-title"></h1>
   <p id="stop-dates" class="sub"></p>
-  <form id="todo-form" class="add-row">
-    <input id="todo-input" type="text" aria-label="New to-do" placeholder="Add a to-do" maxlength="500" autocomplete="off" required>
-    <button class="btn primary" type="submit">Add</button>
-  </form>
-  <ul id="todos" class="list"></ul>
-  <p id="todos-empty" class="empty" hidden>No to-dos yet. Add the first one above.</p>
+  <nav id="tiles" class="tiles" aria-label="Features"></nav>
+</main>
+
+<main id="feature-view" class="view" hidden>
+  <header class="bar">
+    <button id="feature-back" class="link back" type="button">‹ Back</button>
+  </header>
+  <h1 id="feature-title" class="stop-title"></h1>
+  <div id="feature-body"></div>
 </main>
 
 <dialog id="stop-dialog">
@@ -67,18 +70,6 @@
     <div class="actions">
       <button id="stop-delete" class="btn danger" type="button" hidden>Delete</button>
       <button id="stop-cancel" class="btn" type="button">Cancel</button>
-      <button class="btn primary" type="submit">Save</button>
-    </div>
-  </form>
-</dialog>
-
-<dialog id="todo-dialog">
-  <form id="todo-edit-form" class="form">
-    <h2>Edit to-do</h2>
-    <label>Text<input id="todo-edit-text" type="text" maxlength="500" autocomplete="off" required></label>
-    <p id="todo-edit-error" class="error" role="alert"></p>
-    <div class="actions">
-      <button id="todo-edit-cancel" class="btn" type="button">Cancel</button>
       <button class="btn primary" type="submit">Save</button>
     </div>
   </form>
