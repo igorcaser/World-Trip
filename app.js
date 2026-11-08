@@ -21,10 +21,10 @@ const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base
 // Stops with an arrival date first (date, then A-Z); stops without arrival date last (A-Z).
 function sortStops(list) {
   return [...list].sort((a, b) => {
-    if (a.arrival && b.arrival) return a.arrival.localeCompare(b.arrival) || byName(a, b);
+    if (a.arrival && b.arrival) return a.arrival.localeCompare(b.arrival) || byName(a, b) || a.createdAt - b.createdAt;
     if (a.arrival) return -1;
     if (b.arrival) return 1;
-    return byName(a, b);
+    return byName(a, b) || a.createdAt - b.createdAt;
   });
 }
 // Open to-dos first (oldest first), done to-dos at the bottom (earliest done first).
@@ -111,7 +111,7 @@ function renderStop(stop) {
     del.addEventListener('click', async () => {
       if (await confirmAction('Delete this to-do?')) data.deleteTodo(t.id);
     });
-    list.append(el('li', 'item todo' + (t.done ? ' done' : ''), cb, text, del));
+    list.append(el('li', 'item todo' + (t.done ? ' done' : ''), el('label', 'check', cb), text, del));
   }
   $('todos-empty').hidden = todos.length > 0;
 }
@@ -167,7 +167,8 @@ $('todo-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const text = $('todo-input').value.trim();
   const id = location.hash.split('/')[2];
-  if (!text || !id) return;
+  if (!id) return;
+  if (!text) { toast('Please type something first.'); return; }
   data.addTodo(id, text);
   $('todo-input').value = '';
   $('todo-input').focus();
@@ -175,13 +176,14 @@ $('todo-form').addEventListener('submit', (e) => {
 function openTodoEdit(t) {
   editingTodoId = t.id;
   $('todo-edit-text').value = t.text;
+  $('todo-edit-error').textContent = '';
   $('todo-dialog').showModal();
 }
 $('todo-edit-cancel').addEventListener('click', () => $('todo-dialog').close());
 $('todo-edit-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const text = $('todo-edit-text').value.trim();
-  if (!text) return;
+  if (!text) { $('todo-edit-error').textContent = 'Please type something.'; return; }
   data.updateTodoText(editingTodoId, text);
   $('todo-dialog').close();
 });

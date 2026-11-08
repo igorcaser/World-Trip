@@ -1,6 +1,6 @@
 // Service worker: lets the app open without internet.
 // Bump CACHE when you want phones to drop old cached files.
-const CACHE = 'world-trip-v1';
+const CACHE = 'world-trip-v2';
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
 const APP = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'firebase-config.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
@@ -29,9 +29,17 @@ self.addEventListener('fetch', (e) => {
     })));
     return;
   }
-  // App files: network first (updates show immediately when online), cache when offline
-  e.respondWith(fetch(req).then((res) => {
-    const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res;
-  }).catch(() => caches.match(req, { ignoreSearch: true })
-    .then((hit) => hit || (req.mode === 'navigate' ? caches.match('index.html') : Response.error()))));
+  // App files: network first (revalidated, so a deploy never mixes old and new files),
+  // but fall back to the saved copy if offline or if the network stalls for 4 seconds.
+  const fromCache = () => caches.match(req, { ignoreSearch: true })
+    .then((hit) => hit || (req.mode === 'navigate' ? caches.match('index.html') : undefined));
+  const net = fetch(req, { cache: 'no-cache' }).then((res) => {
+    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+    return res;
+  });
+  net.catch(() => {});
+  e.respondWith(Promise.race([
+    net.catch(async () => (await fromCache()) || Response.error()),
+    new Promise((r) => setTimeout(r, 4000)).then(async () => (await fromCache()) || net)
+  ]));
 });
