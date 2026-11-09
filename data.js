@@ -34,7 +34,7 @@ export const watchActivities = (cb, onError) => watch('activities', cb, onError)
 export const watchNotes = (cb, onError) => watch('notes', cb, onError);
 // Travellers live in one private document: settings/travellers = { list: [{ name, passports: ['IT', ...] }] }
 export const watchTravellers = (cb, onError) => onSnapshot(doc(db, 'settings', 'travellers'),
-  (snap) => cb(snap.exists() ? (snap.data().list || []).map((t) => ({ name: t.name, passports: t.passports.split(',') })) : []),
+  (snap) => cb(snap.exists() ? (snap.data().list || []).map((t) => ({ name: t.name, passports: Array.isArray(t.passports) ? t.passports : String(t.passports || '').split(',').filter(Boolean) })) : []),
   onError);
 
 export function addStop({ name, countryCode, arrival, departure }) {
