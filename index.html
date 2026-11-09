@@ -3,23 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#1F3A5F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="World Trip">
+<meta name="apple-mobile-web-app-title" content="Vores rejse">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <link rel="stylesheet" href="styles.css">
-<title>World Trip</title>
+<title>Vores tur rundt i verden</title>
 </head>
 <body>
 <div id="offline" class="banner" hidden>Offline – your changes are saved on this phone and will sync when you are back online.</div>
 <div id="toast" class="toast" hidden></div>
 
 <main id="login" class="view" hidden>
-  <h1 class="big">World Trip</h1>
+  <h1 class="big"><img class="logo" src="icons/logo.svg" alt="Vores tur rundt i verden"></h1>
   <form id="login-form" class="card form">
     <label>Email<input id="login-email" type="email" autocomplete="username" required></label>
     <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
@@ -30,7 +31,7 @@
 
 <main id="stops-view" class="view" hidden>
   <header class="bar">
-    <h1>World Trip</h1>
+    <h1 class="app-title"><img src="icons/favicon.svg" alt="" class="mark">Vores tur rundt i verden</h1>
     <button id="logout" class="link" type="button">Log out</button>
   </header>
   <ul id="stops" class="list"></ul>
