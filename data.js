@@ -31,18 +31,24 @@ export const watchStops = (cb, onError) => watch('stops', cb, onError);
 export const watchTodos = (cb, onError) => watch('todos', cb, onError);
 export const watchPlaces = (cb, onError) => watch('places', cb, onError);
 export const watchActivities = (cb, onError) => watch('activities', cb, onError);
+export const watchNotes = (cb, onError) => watch('notes', cb, onError);
+// Travellers live in one private document: settings/travellers = { list: [{ name, passports: ['IT', ...] }] }
+export const watchTravellers = (cb, onError) => onSnapshot(doc(db, 'settings', 'travellers'),
+  (snap) => cb(snap.exists() ? (snap.data().list || []).map((t) => ({ name: t.name, passports: t.passports.split(',') })) : []),
+  onError);
 
-export function addStop({ name, arrival, departure }) {
-  fire(setDoc(doc(collection(db, 'stops')), { name, arrival, departure, createdAt: Date.now() }));
+export function addStop({ name, countryCode, arrival, departure }) {
+  fire(setDoc(doc(collection(db, 'stops')), { name, countryCode, arrival, departure, createdAt: Date.now() }));
 }
 export function updateStop(id, changes) { // only the changed fields, so a partner's edits to other fields survive
   fire(updateDoc(doc(db, 'stops', id), changes));
 }
-export function deleteStop(id, { todoIds, placeIds, activityIds }) { // removes the stop and everything in it, one batch
+export function deleteStop(id, { todoIds, placeIds, activityIds, noteIds }) { // removes the stop and everything in it, one batch
   const batch = writeBatch(db);
   todoIds.forEach((t) => batch.delete(doc(db, 'todos', t)));
   placeIds.forEach((p) => batch.delete(doc(db, 'places', p)));
   activityIds.forEach((a) => batch.delete(doc(db, 'activities', a)));
+  noteIds.forEach((n) => batch.delete(doc(db, 'notes', n)));
   batch.delete(doc(db, 'stops', id));
   fire(batch.commit());
 }
@@ -71,3 +77,16 @@ export function addActivity({ stopId, title, notes, placeId }) {
 }
 export function updateActivity(id, changes) { fire(updateDoc(doc(db, 'activities', id), changes)); }
 export function deleteActivity(id) { fire(deleteDoc(doc(db, 'activities', id))); }
+
+// ---- travellers (whole list is saved at once; last save wins)
+export function saveTravellers(list) { // passports are stored as one string "IT,BR" (simple to validate in the rules)
+  fire(setDoc(doc(db, 'settings', 'travellers'),
+    { list: list.map((t) => ({ name: t.name, passports: t.passports.join(',') })) }));
+}
+
+// ---- notes: generic text lines per stop and feature (e.g. feature 'visa')
+export function addNote(stopId, feature, text) {
+  fire(setDoc(doc(collection(db, 'notes')), { stopId, feature, text, createdAt: Date.now() }));
+}
+export function updateNote(id, text) { fire(updateDoc(doc(db, 'notes', id), { text })); }
+export function deleteNote(id) { fire(deleteDoc(doc(db, 'notes', id))); }

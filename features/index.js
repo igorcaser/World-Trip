@@ -4,6 +4,7 @@
 import * as todos from './todos.js';
 import * as places from './places.js';
 import * as activities from './activities.js';
+import * as visa from './visa.js';
 
 const svg = (inner) => `<svg viewBox="0 0 48 48" width="56" height="56" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 
@@ -13,5 +14,7 @@ export const features = [
   { id: 'places', title: 'Places', create: places.create,
     icon: svg('<path d="M24 43s13-12.5 13-23a13 13 0 1 0-26 0c0 10.5 13 23 13 23z"/><circle cx="24" cy="20" r="5"/>') },
   { id: 'activities', title: 'Activities', create: activities.create,
-    icon: svg('<path d="M6 16a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v4a4 4 0 0 0 0 8v4a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4v-4a4 4 0 0 0 0-8z"/><path d="M30 14v20" stroke-dasharray="2 4"/>') }
+    icon: svg('<path d="M6 16a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v4a4 4 0 0 0 0 8v4a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4v-4a4 4 0 0 0 0-8z"/><path d="M30 14v20" stroke-dasharray="2 4"/>') },
+  { id: 'visa', title: 'Visa / Documentation', create: visa.create,
+    icon: svg('<rect x="11" y="5" width="26" height="38" rx="3"/><circle cx="24" cy="20" r="7"/><path d="M17 20h14M24 13c-3 4-3 10 0 14M24 13c3 4 3 10 0 14M18 34h12"/>') }
 ];
