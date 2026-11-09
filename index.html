@@ -33,7 +33,7 @@
   <header class="bar">
     <h1 class="app-title"><img src="icons/favicon.svg" alt="" class="mark">Vores tur rundt i verden</h1>
   </header>
-  <div class="toolbar"><button id="open-travellers" class="link" type="button">Travellers</button><button id="logout" class="link" type="button">Log out</button></div>
+  <div class="toolbar"><button id="open-calendar" class="link" type="button">Calendar</button><button id="open-travellers" class="link" type="button">Travellers</button><button id="logout" class="link" type="button">Log out</button></div>
   <ul id="stops" class="list"></ul>
   <p id="stops-empty" class="empty" hidden>No countries yet. Tap + to add the first one.</p>
   <button id="add-stop" class="fab" type="button" aria-label="Add country">+</button>
@@ -63,6 +63,14 @@
   </header>
   <h1 class="stop-title">Travellers</h1>
   <div id="travellers-body"></div>
+</main>
+
+<main id="trip-calendar-view" class="view" hidden>
+  <header class="bar">
+    <button id="calendar-back" class="link" type="button">‹ Countries</button>
+  </header>
+  <h1 class="stop-title">Calendar</h1>
+  <div id="trip-calendar-body"></div>
 </main>
 
 <dialog id="stop-dialog">

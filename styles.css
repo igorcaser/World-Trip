@@ -44,7 +44,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
 .date-row{display:flex;align-items:center;gap:8px}.date-row input{flex:1}
 .actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .fab{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;border:0;background:var(--primary);color:var(--on-primary);font-size:2rem;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.3)}
-dialog{width:calc(100% - 32px);max-width:420px;border:0;border-radius:16px;padding:18px;background:var(--card);color:var(--text)}
+dialog{width:calc(100% - 32px);max-width:420px;max-height:calc(100dvh - 32px);overflow-y:auto;border:0;border-radius:16px;padding:18px;background:var(--card);color:var(--text)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 .banner{background:#92400e;color:#fff;text-align:center;font-size:.85rem;padding:6px 12px}
 .toast{position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;background:#1f2937;color:#fff;border-radius:10px;padding:12px 14px;z-index:10;font-size:.9rem}
@@ -91,3 +91,22 @@ textarea{resize:vertical;min-height:120px}
 .note{display:flex;align-items:center;gap:4px;padding-left:4px}
 .btn.small{min-height:44px;padding:0 10px;font-size:.85rem;flex:none}
 .empty.small{margin:16px 0}
+
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+.cal-title{font-size:1.15rem;margin:0}
+.cal-nav{width:44px;height:44px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;font-size:1.4rem;line-height:1}
+.cal-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:.7rem;color:var(--muted);text-align:center;padding:4px 0}
+.cal-grid{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.cal-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line)}
+.cal-week:first-child{border-top:0}
+.cal-cell{border-left:1px solid var(--line)}
+.cal-day{font-size:.75rem;padding:2px 4px;text-align:right;position:relative}
+.cal-day.out{opacity:.4}
+.cal-day.today span{background:var(--primary);color:var(--on-primary);border-radius:999px;padding:0 5px}
+.cal-bar{position:relative;height:18px;margin:1px 0;padding:0 4px;font-size:.7rem;line-height:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-bar.start{border-top-left-radius:6px;border-bottom-left-radius:6px;margin-left:2px}
+.cal-bar.end{border-top-right-radius:6px;border-bottom-right-radius:6px;margin-right:2px}
+.cal-cities{position:relative;min-width:0;padding:2px 2px 4px}
+.cal-city{font-size:10px;line-height:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:3px solid var(--line);padding-left:2px;margin-top:1px}
+.cal-more{font-size:10px;color:var(--muted);padding-left:5px}
+.cal-foot{font-size:.85rem;color:var(--muted);margin-top:10px}

@@ -64,7 +64,7 @@ export function deleteTodo(id) { fire(deleteDoc(doc(db, 'todos', id))); }
 
 // ---- places: a city per country; the online link is built in the UI, never stored
 export function addPlace({ stopId, name, provider }) {
-  fire(setDoc(doc(collection(db, 'places')), { stopId, name, provider, createdAt: Date.now() }));
+  fire(setDoc(doc(collection(db, 'places')), { stopId, name, provider, arrival: null, departure: null, createdAt: Date.now() }));
 }
 export function updatePlace(id, changes) { fire(updateDoc(doc(db, 'places', id), changes)); }
 // Linked activities stay. Their placeId is left alone: the UI treats a placeId that points to a

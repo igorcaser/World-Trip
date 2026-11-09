@@ -1,5 +1,6 @@
 import * as data from './data.js';
-import { $, el, toast, confirmAction, normName, plural, countryPicker } from './ui.js';
+import { $, el, toast, confirmAction, normName, plural, countryPicker, sortStops, datesText } from './ui.js';
+import { createCalendar } from './calendar-view.js';
 import { features } from './features/index.js';
 import { loadCountries, countries, countryName } from './countries.js';
 import * as travellersPage from './travellers.js';
@@ -11,6 +12,7 @@ const state = {
 const ui = { el, toast, confirmAction, normName, plural, countryPicker };
 const actions = { editStop: (stop) => openStopDialog(stop), goTravellers: () => { location.hash = '#/travellers'; } };
 let travellers = null; // Travellers screen, created on first visit
+let tripCalendar = null; // whole-trip calendar, created on first visit
 loadCountries();
 const stopPicker = countryPicker(countries);
 $('stop-country').append(stopPicker.el);
@@ -23,25 +25,6 @@ let mounted = null;         // the open feature page: { update }
 let mountedKey = null;
 
 /* ---------- helpers ---------- */
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const fmtDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
-function datesText(s) {
-  if (s.arrival && s.departure) return `${fmtDate(s.arrival)} – ${fmtDate(s.departure)}`;
-  if (s.arrival) return `Arrive ${fmtDate(s.arrival)}`;
-  if (s.departure) return `Depart ${fmtDate(s.departure)}`;
-  return 'No dates yet';
-}
-const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
-
-// Stops with an arrival date first (date, then A-Z); stops without arrival date last (A-Z).
-function sortStops(list) {
-  return [...list].sort((a, b) => {
-    if (a.arrival && b.arrival) return a.arrival.localeCompare(b.arrival) || byName(a, b) || a.createdAt - b.createdAt;
-    if (a.arrival) return -1;
-    if (b.arrival) return 1;
-    return byName(a, b) || a.createdAt - b.createdAt;
-  });
-}
 const joinList = (parts) => (parts.length > 1
   ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0]);
 
@@ -50,7 +33,7 @@ function clearFeature() {
   if (mounted) { $('feature-body').replaceChildren(); mounted = null; mountedKey = null; }
 }
 function show(name) {
-  for (const v of ['login', 'stops-view', 'stop-view', 'feature-view', 'travellers-view']) $(v).hidden = v !== name;
+  for (const v of ['login', 'stops-view', 'stop-view', 'feature-view', 'travellers-view', 'trip-calendar-view']) $(v).hidden = v !== name;
   if (name !== 'feature-view') clearFeature();
   if (name && name !== currentView) window.scrollTo(0, 0);
   currentView = name;
@@ -61,6 +44,11 @@ function render() {
     show('travellers-view');
     travellers ??= travellersPage.create($('travellers-body'), { data, ui });
     return travellers.update({ state });
+  }
+  if (location.hash === '#/calendar') {
+    show('trip-calendar-view');
+    tripCalendar ??= createCalendar($('trip-calendar-body'));
+    return tripCalendar.update({ stops: state.stops, places: state.places, order: sortStops(state.stops) });
   }
   const m = location.hash.match(ROUTE);
   if (!m) { show('stops-view'); return renderStops(); }
@@ -185,6 +173,8 @@ $('stop-delete').addEventListener('click', async () => {
 /* ---------- navigation ---------- */
 $('back').addEventListener('click', () => { location.hash = '#/'; });
 $('travellers-back').addEventListener('click', () => { location.hash = '#/'; });
+$('calendar-back').addEventListener('click', () => { location.hash = '#/'; });
+$('open-calendar').addEventListener('click', () => { location.hash = '#/calendar'; });
 $('open-travellers').addEventListener('click', () => { location.hash = '#/travellers'; });
 $('feature-back').addEventListener('click', () => { location.hash = `#/stop/${location.hash.split('/')[2]}`; });
 window.addEventListener('hashchange', render);

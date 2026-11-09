@@ -82,3 +82,23 @@ export function countryPicker(getList, { placeholder = 'Search country' } = {}) 
     focus: () => input.focus()
   };
 }
+
+// ---- dates and country sorting (shared by the country list, places and the calendar)
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const fmtDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+export function datesText(s, empty = 'No dates yet') {
+  if (s.arrival && s.departure) return `${fmtDate(s.arrival)} – ${fmtDate(s.departure)}`;
+  if (s.arrival) return `Arrive ${fmtDate(s.arrival)}`;
+  if (s.departure) return `Depart ${fmtDate(s.departure)}`;
+  return empty;
+}
+const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+// Countries with an arrival date first (date, then A-Z, then order added); without arrival date last (A-Z).
+export function sortStops(list) {
+  return [...list].sort((a, b) => {
+    if (a.arrival && b.arrival) return a.arrival.localeCompare(b.arrival) || byName(a, b) || a.createdAt - b.createdAt;
+    if (a.arrival) return -1;
+    if (b.arrival) return 1;
+    return byName(a, b) || a.createdAt - b.createdAt;
+  });
+}

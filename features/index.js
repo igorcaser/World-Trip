@@ -5,6 +5,7 @@ import * as todos from './todos.js';
 import * as places from './places.js';
 import * as activities from './activities.js';
 import * as visa from './visa.js';
+import * as calendar from './calendar.js';
 
 const svg = (inner) => `<svg viewBox="0 0 48 48" width="56" height="56" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 
@@ -16,5 +17,7 @@ export const features = [
   { id: 'activities', title: 'Activities', create: activities.create,
     icon: svg('<path d="M6 16a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v4a4 4 0 0 0 0 8v4a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4v-4a4 4 0 0 0 0-8z"/><path d="M30 14v20" stroke-dasharray="2 4"/>') },
   { id: 'visa', title: 'Visa / Documentation', create: visa.create,
-    icon: svg('<rect x="11" y="5" width="26" height="38" rx="3"/><circle cx="24" cy="20" r="7"/><path d="M17 20h14M24 13c-3 4-3 10 0 14M24 13c3 4 3 10 0 14M18 34h12"/>') }
+    icon: svg('<rect x="11" y="5" width="26" height="38" rx="3"/><circle cx="24" cy="20" r="7"/><path d="M17 20h14M24 13c-3 4-3 10 0 14M24 13c3 4 3 10 0 14M18 34h12"/>') },
+  { id: 'calendar', title: 'Calendar', create: calendar.create,
+    icon: svg('<rect x="7" y="10" width="34" height="31" rx="4"/><path d="M7 19h34M16 6v8M32 6v8M15 27h4M22 27h4M29 27h4M15 34h4M22 34h4"/>') }
 ];
