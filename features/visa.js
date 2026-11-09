@@ -32,16 +32,44 @@ export function stayDays(arrival, departure) {
   return Math.round((t(departure) - t(arrival)) / 86400000) + 1;
 }
 
+// "20 days / 19 nights" (both the arrival and the departure day count as days).
+export function stayText(days) {
+  const nights = days - 1;
+  return `${days} ${days === 1 ? 'day' : 'days'} / ${nights} ${nights === 1 ? 'night' : 'nights'}`;
+}
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// "1–20 Mar", "28 Feb – 3 Mar", "28 Dec 2027 – 3 Jan 2028", "1 Mar"
+export function formatRange(arrival, departure) {
+  const [ay, am, ad] = arrival.split('-').map(Number);
+  const [dy, dm, dd] = departure.split('-').map(Number);
+  if (arrival === departure) return `${ad} ${MON[am - 1]}`;
+  if (ay === dy && am === dm) return `${ad}–${dd} ${MON[am - 1]}`;
+  if (ay === dy) return `${ad} ${MON[am - 1]} – ${dd} ${MON[dm - 1]}`;
+  return `${ad} ${MON[am - 1]} ${ay} – ${dd} ${MON[dm - 1]} ${dy}`;
+}
+
 const google = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+const UM = 'https://um.dk/rejse-og-ophold/rejse-til-udlandet/';
+// um = data/um-dk.json: { ISO2: [travel-advice slug, passport-and-visa slug] }. Direct links when um.dk has the page, otherwise a search.
+function danishLinks(code, um) {
+  const pair = um && um[code];
+  const dk = localName(code, 'da');
+  return [
+    { label: 'Danish foreign ministry travel advice (um.dk)',
+      url: pair?.[0] ? `${UM}rejsevejledninger/${pair[0]}/` : google(`site:um.dk rejsevejledning ${dk}`) },
+    { label: 'Danish foreign ministry passport & visa rules (um.dk)',
+      url: pair?.[1] ? `${UM}pas-og-visum/${pair[1]}/` : google(`site:um.dk pas og visum ${dk}`) }
+  ];
+}
 const MINISTRIES = {
-  DK: { label: 'Danish foreign ministry travel advice (um.dk)', lang: 'da', q: (n) => `site:um.dk rejsevejledning ${n}` },
   IT: { label: 'Viaggiare Sicuri (Italian foreign ministry)', lang: 'it', q: (n) => `site:viaggiaresicuri.it ${n}` },
   BR: { label: 'Itamaraty (Brazilian foreign ministry): visas', lang: 'pt-BR', q: (n) => `site:gov.br/mre vistos ${n}` }
 };
-export function officialLinks(code, heldPassports) {
+export function officialLinks(code, heldPassports, um = null) {
   const en = countryName(code);
-  const links = Object.entries(MINISTRIES).filter(([p]) => heldPassports.has(p))
-    .map(([, m]) => ({ label: m.label, url: google(m.q(localName(code, m.lang))) }));
+  const links = heldPassports.has('DK') ? danishLinks(code, um) : [];
+  links.push(...Object.entries(MINISTRIES).filter(([p]) => heldPassports.has(p))
+    .map(([, m]) => ({ label: m.label, url: google(m.q(localName(code, m.lang))) })));
   links.push(
     { label: 'CDC travel health (vaccines)', url: google(`site:wwwnc.cdc.gov/travel/destinations ${en}`) },
     { label: 'WHO vaccination requirements', url: google(`site:who.int vaccination requirements international travellers ${en}`) },
@@ -69,12 +97,22 @@ function loadMeta() {
   return metaPromise;
 }
 
+let um = null;
+let umPromise = null;
+function loadUm() {
+  umPromise ??= fetch('data/um-dk.json').then((r) => (r.ok ? r.json() : null))
+    .then((m) => { um = m; if (!m) umPromise = null; return m; })
+    .catch(() => { umPromise = null; return null; });
+  return umPromise;
+}
+
 export function create(container, { data, ui }) {
   const { el, toast, confirmAction } = ui;
   let ctx = null;
   let editingId = null;
 
   const notice = el('p', 'notice');
+  const stayLine = el('p', 'sub stay-line'); stayLine.hidden = true;
   const cards = el('div', 'cards');
   const linksTitle = el('h2', 'section-title', 'Check before you go');
   const linksHint = el('p', 'sub', 'Passport validity, entry forms and vaccinations: check these official sources and write what you find in the notes.');
@@ -95,7 +133,7 @@ export function create(container, { data, ui }) {
     <button type="submit" class="btn primary">Save</button></div></form>`;
   const editInput = dlg.querySelector('input');
   const editError = dlg.querySelector('.error');
-  container.append(notice, cards, linksTitle, linksHint, links, notesTitle, form, notes, notesEmpty, dlg);
+  container.append(notice, stayLine, cards, linksTitle, linksHint, links, notesTitle, form, notes, notesEmpty, dlg);
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -133,7 +171,8 @@ export function create(container, { data, ui }) {
       cards.replaceChildren(message('Add the travellers and their passports first.', 'Add travellers', () => actions.goTravellers()));
       return;
     }
-    const stay = stayDays(stop.arrival, stop.departure);
+    const stayRaw = stayDays(stop.arrival, stop.departure);
+    const stay = stayRaw >= 1 ? stayRaw : null;
     cards.replaceChildren(...state.travellers.map((t) => {
       const statuses = t.passports.map((p) => statusFor(loaded.get(p), p, stop.countryCode));
       const complete = t.passports.every((p) => p === stop.countryCode || loaded.get(p));
@@ -148,7 +187,7 @@ export function create(container, { data, ui }) {
           el('div', 'pass-status', el('span', `status ${missing || pending ? 'none' : TONE[s.code]}`, text),
             ...(i === best ? [el('span', 'easiest', 'Easiest')] : [])));
         if (stay && s.days && stay > s.days && s.code !== 'own') {
-          line.append(el('p', 'warn', `Your stay of ${stay} days is longer than the ${s.days} days allowed.`));
+          line.append(el('p', 'warn', `Your stay of ${stayText(stay)} is longer than the ${s.days} days allowed.`));
         }
         return line;
       });
@@ -161,7 +200,7 @@ export function create(container, { data, ui }) {
     if (!stop.countryCode) { links.replaceChildren(); linksTitle.hidden = linksHint.hidden = true; return; }
     linksTitle.hidden = linksHint.hidden = false;
     const held = new Set(state.travellers.flatMap((t) => t.passports));
-    links.replaceChildren(...officialLinks(stop.countryCode, held).map((l) => {
+    links.replaceChildren(...officialLinks(stop.countryCode, held, um).map((l) => {
       const a = el('a', 'row', el('div', 'main', el('div', 'name', l.label)), el('span', 'chev', '↗'));
       a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
       return el('li', 'item', a);
@@ -189,7 +228,13 @@ export function create(container, { data, ui }) {
     }
   }
 
-  function renderAll() { renderCards(); renderLinks(); renderNotes(); }
+  function renderStay() {
+    const d = stayDays(ctx.stop.arrival, ctx.stop.departure);
+    stayLine.hidden = !(d >= 1);
+    if (d >= 1) stayLine.textContent = `Your stay: ${stayText(d)} (${formatRange(ctx.stop.arrival, ctx.stop.departure)})`;
+  }
+
+  function renderAll() { renderCards(); renderStay(); renderLinks(); renderNotes(); }
 
   return {
     update(next) {
@@ -197,8 +242,9 @@ export function create(container, { data, ui }) {
       renderAll();
       const need = ctx.stop.countryCode ? ctx.state.travellers.flatMap((t) => t.passports).filter((p) => !loaded.has(p) || (loaded.get(p) === null && navigator.onLine && Date.now() - (failedAt.get(p) || 0) > 30000)) : [];
       const metaNeeded = !meta;
-      if (need.length || metaNeeded) {
-        Promise.all([...need.map(loadTable), metaNeeded ? loadMeta() : null]).then(() => { if (ctx) renderAll(); });
+      const umNeeded = !um && !!ctx.stop.countryCode;
+      if (need.length || metaNeeded || umNeeded) {
+        Promise.all([...need.map(loadTable), metaNeeded ? loadMeta() : null, umNeeded ? loadUm() : null]).then(() => { if (ctx) renderAll(); });
       }
     }
   };
